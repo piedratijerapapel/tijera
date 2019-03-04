@@ -6,7 +6,7 @@ export default function(options, level) {
       let copy = options.baseImg.clone().resize(level.width, level.height);
 
       options.levelImages[level] = img.blit(copy, level.x, level.y);
-      next(err, img);
+      next(err, `Nivel zoom ${level.level}`);
     });
   };
 }

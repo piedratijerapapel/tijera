@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 import events from 'events';
 import async from 'async';
 import util from 'util';
@@ -43,63 +42,38 @@ export default class MapSlicer {
   }
 
   setOutputFolder(url) {
-    let options = this.options;
-
-    if (url) {
-      options.output = path.join(
-        path.dirname(options.file),
-        url,
-        '{google}.jpg'
-      );
-    } else {
-      options.output = path.join(
-        path.dirname(options.file),
-        path.basename(options.file, path.extname(options.file)),
-        '{google}.jpg'
-      );
-    }
-
-    console.log(options.output);
+    this.options.output = url;
   }
 
   setup() {
     fs.exists(this.options.file, exists => {
       if (exists) {
         this.emit('loading', this.options.file);
-        Jimp.read(this.options.file)
-          .then(img => {
-            const w = img.bitmap.width;
-            const h = img.bitmap.height;
-            this.options = buildOptions(img, w, h, this.options);
-            this.tasks = this.collectTasks(w, h);
-          })
-          .catch(err => {
-            this.emit(
-              'error',
-              new Error(
-                'Error#2: Error while fetching size of File: ' +
-                  this.options.file +
-                  '; Error: ' +
-                  err
-              )
-            );
-          });
+
+        setTimeout(() => {
+          Jimp.read(this.options.file)
+            .then(img => {
+              const w = img.bitmap.width;
+              const h = img.bitmap.height;
+              this.options = buildOptions(img, w, h, this.options);
+              this.tasks = this.collectTasks(w, h);
+            })
+            .catch(err => {
+              this.emit('error', this.options.file);
+            });
+        }, 500);
       } else {
-        this.emit(
-          'error',
-          new Error('Error#1: File not found: ' + this.options.file)
-        );
+        this.emit('error', this.options.file);
       }
     });
   }
 
   startProcess() {
     this.emit('start', this.totalTasks, this.options);
-    this.emit('progress', 0, this.totalTasks, this.executedTasks);
 
-    // async.series(tasks, () => {
-    //   this.emit('end');
-    // });
+    async.series(this.tasks, () => {
+      this.emit('end');
+    });
   }
 
   wrapProgressTask(task) {
@@ -125,8 +99,9 @@ export default class MapSlicer {
 
   collectTasks(imageWidth, imageHeight) {
     let levels = calculateLevelData(imageWidth, imageHeight, this.options);
-    let tasks = [];
     this.emit('levels', levels);
+
+    let tasks = [];
     this.totalTasks = 0;
     this.executedTasks = 0;
 

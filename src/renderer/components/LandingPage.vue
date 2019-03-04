@@ -1,9 +1,32 @@
 <template>
   <main>
     <div class="fileContainer">
-      <input type="file" class="upload" ref="fileInput" @change="handleImageSelect">
-      <label tabindex="0" for="file" class="inputFileTrigger">{{fileName}}</label>
+      <input type="file" class="fileInput" ref="fileInput" @change="handleImageSelect">
+      <label tabindex="0" for="file" class="inputTrigger">{{fileName}}</label>
     </div>
+
+    <div class="info">
+      <p>
+        Archivo seleccionado:
+        <span v-if="filePath">{{filePath}}</span>
+      </p>
+      <p>
+        Niveles de zoom:
+        <span v-if="levels">{{levels}}</span>
+      </p>
+      <p>
+        # de imágenes (tiles):
+        <span v-if="totalTiles">{{totalTiles}}</span>
+      </p>
+    </div>
+
+    <div class="fileContainer" v-if="filePath">
+      <input type="file" class="fileInput" ref="outDir" @change="handleOutDir" webkitdirectory>
+      
+      <label tabindex="0" for="file" class="inputTrigger outDir">{{folderName}}</label>
+    </div>
+
+    <button @click="slice" :disabled="!ready">Procesar</button>
 
     <div class="progressPieChart" ref="progress" v-if="processing">
       <div class="ppc-progress">
@@ -16,26 +39,14 @@
       </div>
     </div>
 
-    <p class="info" v-if="filePath">
-      Archivo seleccionado:
-      <span>{{filePath}}</span>
-    </p>
-    <p class="info" v-if="levels">
-      Niveles de zoom:
-      <span>{{levels}}</span>
-    </p>
-    <p class="info" v-if="totalTiles">
-      # de imágenes (tiles):
-      <span>{{totalTiles}}</span>
-    </p>
-
-    <input type="file" class="outDir" ref="outDir" @change="handleOutDir" webkitdirectory>
+    <div v-bind:class="{ log: true, error: isError }">{{log}}</div>
   </main>
 </template>
 
 <script>
 import path from "path";
 import Slicer from "../utils/Slicer";
+import slugify from "slugify";
 
 export default {
   name: "landing-page",
@@ -46,11 +57,17 @@ export default {
       percent: 0,
       processing: false,
       levels: null,
-      totalTiles: null
+      totalTiles: null,
+      log: "",
+      folderName: "Carpeta destino:",
+      ready: false,
+      isError: false
     };
   },
 
-  mounted() {},
+  mounted() {
+    this.resetData();
+  },
 
   methods: {
     handleImageSelect(e) {
@@ -64,7 +81,7 @@ export default {
 
       this.slicer.on("loading", file => {
         this.fileName = "...";
-        console.log(`Loading ${file}`);
+        this.log = `Cargando: ${file}`;
       });
 
       this.slicer.on("levels", d => {
@@ -72,38 +89,43 @@ export default {
         this.levels = d.length - 1;
         this.fileName = path.basename(file.name, path.extname(file.name));
         this.filePath = file.path;
-        console.log(`Image loaded.`, d);
+        this.setOutFolder(fileInfo.dir);
+        this.log = `Imágen cargada exitosamente: ${file.name}`;
       });
 
       this.slicer.on("tasks", (totalImages, tasks) => {
         this.totalTiles = totalImages;
-        console.log(totalImages);
-      });
-
-      this.slicer.on("options", options => {
-        console.log(options);
       });
 
       this.slicer.on("start", (files, options) => {
-        console.info(`Start processing ${files} files.`);
+        this.log = `Procesando ${files} imágenes`;
       });
 
-      this.slicer.on("error", err => {
-        console.error(err);
+      this.slicer.on("error", file => {
+        this.resetData();
+        this.log = `El archivo ${file} no se puede procesar.`;
+        this.isError = true;
       });
 
       this.slicer.on("progress", (progress, total, current, file) => {
+        this.log = `Procesando imagen: ${file}`;
         this.updateProgress(progress);
       });
 
       this.slicer.on("end", () => {
-        console.info("Finished processing slices");
+        this.log = "¡Proceso exitoso!";
       });
     },
 
     handleOutDir(e) {
-      console.log(e);
-      this.slicer.setOutputFolder(`maps/${fileInfo.name}/{z}/{y}/{x}`);
+      this.setOutFolder(e.target.files[0].path);
+    },
+
+    setOutFolder(out) {
+      const slug = slugify(this.fileName, { lower: true });
+      this.folderName = `Destino: ${out}/${slug}/`;
+      this.slicer.setOutputFolder(`${out}/${slug}`);
+      this.ready = true;
     },
 
     resetData() {
@@ -113,6 +135,9 @@ export default {
       this.totalTiles = null;
       this.filePath = null;
       this.fileName = "Seleccionar imagen...";
+      this.ready = false;
+      this.log = "";
+      this.isError = false;
     },
 
     updateProgress(progress) {
@@ -131,7 +156,9 @@ export default {
     },
 
     slice() {
-      //this.slicer.start();
+      this.processing = true;
+      this.ready = false;
+      this.slicer.start();
     }
   }
 };
@@ -140,6 +167,7 @@ export default {
 <style lang="scss">
 $size: 200px;
 $fill: #181818;
+$green: #41c5ab;
 
 * {
   box-sizing: border-box;
@@ -150,11 +178,16 @@ $fill: #181818;
 body {
   font-family: Arial;
   background: #f7f7f7;
+  width: 80%;
+  margin: 0 auto;
 }
 
 .info {
   font-size: 0.85em;
-  padding: 0.2em 3em;
+
+  p {
+    padding: 0.2em 0;
+  }
 
   span {
     font-weight: bold;
@@ -163,11 +196,10 @@ body {
 
 .fileContainer {
   position: relative;
-  width: 50%;
   margin: 1em auto;
   text-align: center;
 
-  .upload {
+  .fileInput {
     position: absolute;
     top: 0;
     left: 0;
@@ -175,21 +207,19 @@ body {
     opacity: 0;
     padding: 14px 0;
     cursor: pointer;
-
-    &:hover + .inputFileTrigger,
-    &:focus + .inputFileTrigger {
-      background: #000000;
-      color: #41c5ab;
-    }
   }
-  .inputFileTrigger {
+
+  .inputTrigger {
     display: block;
     padding: 14px 45px;
-    background: #41c5ab;
+    background: $green;
     color: $fill;
     font-size: 1em;
-    transition: all 0.4s;
-    cursor: pointer;
+
+    &.outDir {
+      padding: 10px 0;
+      font-size: 0.75em;
+    }
   }
 }
 
@@ -209,6 +239,7 @@ body {
   border-radius: 50%;
   background-color: #e5e5e5;
   position: relative;
+  margin: 1em auto;
 
   &.gt-50 {
     background-color: $fill;
@@ -255,5 +286,65 @@ body {
 
 .progress-pie-chart {
   margin: 50px auto 0;
+}
+
+.log {
+  width: 100%;
+  font-size: 0.75em;
+  font-style: italic;
+  padding: 1em;
+  background-color: $fill;
+  color: white;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+
+  &.error {
+    background-color: rgb(231, 50, 50);
+  }
+}
+
+.compass {
+  .back {
+    fill: rgba(255, 255, 255, 0.3);
+  }
+  .direction {
+    fill: none;
+  }
+  .chevron {
+    fill: none;
+    stroke: rgb(0, 0, 0);
+    stroke-width: 3px;
+  }
+  .zoom .chevron {
+    stroke-width: 3px;
+  }
+  .active .chevron,
+  .chevron.active {
+    stroke: rgb(49, 49, 49);
+  }
+  &.active .active .direction {
+    fill: rgb(236, 236, 236);
+  }
+}
+
+button {
+  padding: 1em;
+  background-color: $green;
+  border: none;
+  cursor: pointer;
+  transition: all 0.4s;
+
+  &:hover,
+  &:focus {
+    background: $fill;
+    color: $green;
+  }
+
+  &:disabled {
+    background-color: rgb(192, 192, 192);
+    font-style: italic;
+    color: black;
+  }
 }
 </style>

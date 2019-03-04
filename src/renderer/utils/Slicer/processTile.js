@@ -1,10 +1,9 @@
 import mkdirp from 'mkdirp';
 import path from 'path';
-import outputResolve from './util/outputResolve';
 
 export default function(options, level, tile) {
   return next => {
-    let tileFile = outputResolve(options.output, level.level, tile.y, tile.x);
+    const tileFile = `${options.output}/${level.level}/${tile.y}/${tile.x}.jpg`;
 
     mkdirp(path.dirname(tileFile), function(err) {
       if (err) {
