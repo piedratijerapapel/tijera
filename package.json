@@ -17,14 +17,8 @@
     "postinstall": ""
   },
   "build": {
-    "productName": "tijera",
-    "appId": "com.electron.tijera",
-    "directories": {
-      "output": "build"
-    },
-    "files": [
-      "dist/electron/**/*"
-    ],
+    "productName": "Tijera",
+    "appId": "org.1cgonza.tijera",
     "dmg": {
       "contents": [
         {
@@ -40,6 +34,14 @@
         }
       ]
     },
+    "directories": {
+      "output": "build"
+    },
+    "files": [
+      "dist/electron",
+      "node_modules/",
+      "package.json"
+    ],
     "mac": {
       "icon": "build/icons/icon.icns"
     },
