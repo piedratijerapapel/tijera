@@ -1,10 +1,14 @@
-# tijera
+# Tijera
 
-> Aplicación para generar mosaicos de mapa.
+[![Build Status](https://travis-ci.com/piedratijerapapel/tijera.svg?branch=master)](https://travis-ci.com/piedratijerapapel/tijera)
+[![Build status](https://ci.appveyor.com/api/projects/status/dvymna62e1fm9f27?svg=true)](https://ci.appveyor.com/project/1cgonza/tijera)
+
+Software para crear mosaico de imágenes para zoom.  
+Ejemplo: http://piedratijerapapel.com/visualizacion
 
 #### Build Setup
 
-``` bash
+```bash
 # install dependencies
 npm install
 
@@ -14,9 +18,4 @@ npm run dev
 # build electron application for production
 npm run build
 
-
 ```
-
----
-
-This project was generated with [electron-vue](https://github.com/SimulatedGREG/electron-vue)@[8fae476](https://github.com/SimulatedGREG/electron-vue/tree/8fae4763e9d225d3691b627e83b9e09b56f6c935) using [vue-cli](https://github.com/vuejs/vue-cli). Documentation about the original structure can be found [here](https://simulatedgreg.gitbooks.io/electron-vue/content/index.html).
