@@ -6,16 +6,21 @@
 Software para crear mosaico de imágenes para zoom.  
 Ejemplo: http://piedratijerapapel.com/visualizacion
 
-#### Build Setup
+## Descargas
+
+[Mac](https://github.com/piedratijerapapel/tijera/releases/download/0.0.1/Tijera-0.0.1.dmg)
+
+[Windows](https://github.com/piedratijerapapel/tijera/releases/download/0.0.1/tijera-setup-0.0.1.exe)
+
+## Desarrollo
 
 ```bash
-# install dependencies
 npm install
 
-# serve with hot reload at localhost:9080
+# Crear servidor local con hotreload
 npm run dev
 
-# build electron application for production
+# Para construir aplicación
 npm run build
 
 ```
